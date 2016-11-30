@@ -39,6 +39,7 @@
 static uint8_t devAddr;
 static I2C_Dev *I2Cx;
 static bool isInit;
+static float movingAverageBuffer[MOVING_AVERAGE_ALG_WINDOW];			//this structure will contain the asl (above the sea level) data
 
 bool lps25hInit(I2C_Dev *i2cPort)
 {
@@ -133,6 +134,29 @@ bool lps25hSetEnabled(bool enable)
 	}
 
 	return status;
+}
+
+//TODO optimize this algorithms (http://dsp.stackexchange.com/questions/20333/how-to-implement-a-moving-average-in-c-without-a-buffer)
+float updateMovingAverage(float newASL){
+double sum = newASL;
+
+	//sum the already contained value and shift to the right by one position
+	//the newest will be in the 0-index
+	for(int i=MOVING_AVERAGE_ALG_WINDOW-1; i>=1; i--){
+		movingAverageBuffer[i] = movingAverageBuffer[i-1];
+		sum += movingAverageBuffer[i];
+	}
+	movingAverageBuffer[0] = newASL;
+
+	return newASL = sum/MOVING_AVERAGE_ALG_WINDOW;
+
+	/* You can approximate a rolling average by applying a weighted average on your input stream.
+	 * template <unsigned N>
+		double approxRollingAverage (double avg, double input) {
+			avg -= avg/N;
+			avg += input/N;
+			return avg;
+		}*/
 }
 
 bool lps25hGetData(float* pressure, float* temperature, float* asl)

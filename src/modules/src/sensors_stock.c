@@ -65,9 +65,14 @@ void sensorsAcquire(sensorData_t *sensors, const uint32_t tick)
                  &sensors->baro.temperature,
                  &sensors->baro.asl);
 #else
+
     lps25hGetData(&sensors->baro.pressure,
-                 &sensors->baro.temperature,
-                 &sensors->baro.asl);
+                     &sensors->baro.temperature,
+                     &sensors->baro.asl);
+
+    //TODO JS: Perform a moving average algorithm on these data
+    sensors->baro.asl = updateMovingAverage(sensors->baro.asl);
+
 #endif
     // Experimental: receive the position from parameters
     if (position.timestamp) {

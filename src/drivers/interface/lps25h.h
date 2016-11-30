@@ -33,6 +33,9 @@
 #include <stdbool.h>
 #include "i2cdev.h"
 
+//moving average algorithm defines
+#define MOVING_AVERAGE_ALG_WINDOW 20
+
 // addresses of the device
 #define LPS25H_I2C_ADDR 0x5D // 1011101b
 
@@ -153,5 +156,7 @@ bool lps25hSetEnabled(bool enable);
 bool lps25hGetData(float* pressure, float* temperature, float* asl);
 
 float lps25hPressureToAltitude(float* pressure);
+
+float updateMovingAverage(float newASL);
 
 #endif // LPS25H_H

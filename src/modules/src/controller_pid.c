@@ -11,7 +11,7 @@
 
 #define ATTITUDE_UPDATE_DT    (float)(1.0f/ATTITUDE_RATE)
 
-static bool tiltCompensationEnabled = false;
+static bool tiltCompensationEnabled = true;
 
 static attitude_t attitudeDesired;
 static attitude_t rateDesired;

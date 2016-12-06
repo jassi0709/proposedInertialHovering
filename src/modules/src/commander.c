@@ -81,6 +81,10 @@ static bool thrustLocked;
 static bool altHoldMode = false;
 static bool posHoldMode = false;
 static bool posSetMode = false;
+static bool jaskiCommand = false;
+
+static uint32_t beginCmdTime = 0;
+static bool oneWayDone = false;
 
 static RPYType stabilizationModeRoll  = ANGLE; // Current stabilization type of roll (rate or angle)
 static RPYType stabilizationModePitch = ANGLE; // Current stabilization type of pitch (rate or angle)
@@ -303,13 +307,46 @@ void commanderGetSetpoint(setpoint_t *setpoint, const state_t *state)
     setpoint->thrust = min(rawThrust, MAX_THRUST);
   }
 
+  if(jaskiCommand){
+	  if((xTaskGetTickCount() - beginCmdTime) > 1500){
+		  //commanderSetActiveThrust(50);
+		  //commanderSetActiveYaw(140.0);
+		  //jaskiCommand = false;
+		  oneWayDone = !oneWayDone;
+		  beginCmdTime = xTaskGetTickCount();
+	  }
+	  else{
+		  if(oneWayDone)
+			  commanderSetActivePitch(-2);
+		  else
+			  commanderSetActivePitch(2);
+	  }
+  }
+  else
+	  beginCmdTime = xTaskGetTickCount();
+
   if (altHoldMode) {
     setpoint->thrust = 0;
     setpoint->mode.z = modeVelocity;
 
+    /*if((xTaskGetTickCount() - beginCmdTime) > 1500){
+    	//commanderSetActiveThrust(50);
+    	//commanderSetActiveYaw(140.0);
+    	//jaskiCommand = false;
+    	oneWayDone = !oneWayDone;
+    	beginCmdTime = xTaskGetTickCount();
+    }
+    else{
+    	if(oneWayDone)
+    		commanderSetActivePitch(-2);
+    	else
+    		commanderSetActivePitch(2);
+    }*/
+
     setpoint->velocity.z = ((float) rawThrust - 32767.f) / 32767.f;
   } else {
     setpoint->mode.z = modeDisable;
+    //beginCmdTime = xTaskGetTickCount();
   }
 
   // roll/pitch
@@ -379,6 +416,7 @@ void commanderGetSetpoint(setpoint_t *setpoint, const state_t *state)
 // Params for flight modes
 PARAM_GROUP_START(flightmode)
 PARAM_ADD(PARAM_UINT8, althold, &altHoldMode)
+PARAM_ADD(PARAM_UINT8, jaskiCMD, &jaskiCommand)
 PARAM_ADD(PARAM_UINT8, poshold, &posHoldMode)
 PARAM_ADD(PARAM_UINT8, posSet, &posSetMode)
 PARAM_ADD(PARAM_UINT8, yawMode, &yawMode)

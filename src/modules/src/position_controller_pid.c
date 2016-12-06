@@ -78,20 +78,22 @@ static const float thrustScale = 1000.0f;
 
 #ifndef UNIT_TEST
 static struct this_s this = {
+  /*This PID looks very useless*/
   .pidVX = {
     .init = {
-      .kp = 100.0f,
-      .ki = 250.0f,
-      .kd = 2.0f,
+      .kp = 0.0f,
+      .ki = 0.0f,
+      .kd = 0.0f,
     },
     .pid.dt = DT,
   },
 
+  /*This PID looks very useless*/
   .pidVY = {
     .init = {
-      .kp = 70.0f,
-      .ki = 200.0f,
-      .kd = 0.2f,
+      .kp = 0.0f,
+      .ki = 0.0f,
+      .kd = 0.0f,
     },
     .pid.dt = DT,
   },
@@ -132,8 +134,8 @@ static struct this_s this = {
     .pid.dt = DT,
   },
 
-  .thrustBase = 38000,
-  .thrustMin  = 30000,
+  .thrustBase = 39000,
+  .thrustMin  = 35000,
 };
 #endif
 

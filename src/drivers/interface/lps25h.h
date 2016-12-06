@@ -34,7 +34,7 @@
 #include "i2cdev.h"
 
 //moving average algorithm defines
-#define MOVING_AVERAGE_ALG_WINDOW 30
+#define MOVING_AVERAGE_ALG_WINDOW 200
 
 // addresses of the device
 #define LPS25H_I2C_ADDR 0x5D // 1011101b

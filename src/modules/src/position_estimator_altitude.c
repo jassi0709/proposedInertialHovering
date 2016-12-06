@@ -39,17 +39,22 @@ struct selfState_s {
   float vAccDeadband; // Vertical acceleration deadband
   float velZAlpha;   // Blending factor to avoid vertical speed to accumulate error
   float estimatedVZ;
+  float aslAlpha;
 };
 
 static struct selfState_s state = {
   .estimatedZ = 0.0,
   .velocityZ = 0.0,
   .estAlpha = 0.997,//0.997,
-  .velocityFactor = 1.0,
+  .velocityFactor = 1.293125,//1.293125,//1.0,
   .vAccDeadband = 0.04,//0.04,
   .velZAlpha = 0.995,
   .estimatedVZ = 0.0,
+  .aslAlpha = 0.003,
 };
+
+static uint16_t interation = 0;
+#define MAX_ITERATION 10		//at each 50th counter iteration, the barometer's data are considered into the Z position
 
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state);
 static void positionUpdateVelocityInternal(float accWZ, float dt, struct selfState_s* state);
@@ -64,9 +69,22 @@ void positionUpdateVelocity(float accWZ, float dt) {
 
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state) {
   static float prev_estimatedZ = 0;
-  state->estimatedZ = state->estAlpha * state->estimatedZ +
-                     (1.0 - state->estAlpha) * asl +
-                     state->velocityFactor * state->velocityZ * dt;
+
+  if(interation < MAX_ITERATION){
+
+	  state->estimatedZ = state->estAlpha * state->estimatedZ +
+	  	  				 state->velocityFactor * state->velocityZ * dt;
+
+	  interation++;
+  }
+  else{
+	  state->estimatedZ = state->estAlpha * state->estimatedZ +
+			  (1.0 - state->estAlpha) * asl +
+			  //(state->aslAlpha) * asl+
+			  state->velocityFactor * state->velocityZ * dt;
+
+	  interation = 0;
+  }
 
   estimate->position.x = 0.0;
   estimate->position.y = 0.0;
@@ -89,6 +107,7 @@ LOG_GROUP_STOP(posEstimatorAlt)
 
 PARAM_GROUP_START(posEst)
 PARAM_ADD(PARAM_FLOAT, estAlpha, &state.estAlpha)
+PARAM_ADD(PARAM_FLOAT, aslAlpha, &state.aslAlpha)
 PARAM_ADD(PARAM_FLOAT, velFactor, &state.velocityFactor)
 PARAM_ADD(PARAM_FLOAT, velZAlpha, &state.velZAlpha)
 PARAM_ADD(PARAM_FLOAT, vAccDeadband, &state.vAccDeadband)

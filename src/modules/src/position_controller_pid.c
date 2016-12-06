@@ -100,9 +100,9 @@ static struct this_s this = {
 
   .pidVZ = {
     .init = {
-      .kp = 25,
-      .ki = 170,
-      .kd = 0.5,
+      .kp = 50,
+      .ki = 100,
+      .kd = 1.1,
     },
     .pid.dt = DT,
   },

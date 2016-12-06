@@ -68,7 +68,7 @@ static float rpLimit  = 10;
 static float rpLimitOverhead = 1.10f;
 // Velocity maximums
 static float xyVelMax = 2.0f;
-static float zVelMax  = 5.0f;
+static float zVelMax  = 2.0f;
 static float velMaxOverhead = 1.10f;
 static const float thrustScale = 1000.0f;
 
@@ -100,9 +100,9 @@ static struct this_s this = {
 
   .pidVZ = {
     .init = {
-      .kp = 50,
-      .ki = 100,
-      .kd = 1.1,
+      .kp = 15,
+      .ki = 4,
+      .kd = 0,
     },
     .pid.dt = DT,
   },
@@ -134,8 +134,8 @@ static struct this_s this = {
     .pid.dt = DT,
   },
 
-  .thrustBase = 39000,
-  .thrustMin  = 35000,
+  .thrustBase = 38000,
+  .thrustMin  = 34000,
 };
 #endif
 

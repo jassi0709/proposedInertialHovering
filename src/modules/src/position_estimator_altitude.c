@@ -59,8 +59,8 @@ static struct selfState_s state = {
 
 static uint16_t iteration = 0;
 static uint16_t subIteration = 0;
-#define MAX_ITERATION 500*5		//at each Xth counter iteration, the barometer's data are considered into the Z position
-#define RESETTING_WINDOW 100		//TODO need some optimization
+#define MAX_ITERATION 500*3		//at each Xth counter iteration, the barometer's data are considered into the Z position
+#define RESETTING_WINDOW 50		//TODO need some optimization
 
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state);
 static void positionUpdateVelocityInternal(float accWZ, float dt, struct selfState_s* state);
@@ -81,18 +81,19 @@ static void positionEstimateInternal(state_t* estimate, float asl, float dt, str
    * 		the drone starts oscillating
    */
 
-  /*if(iteration>=MAX_ITERATION){
-	  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+  /*state->estimatedAsl = state->estAlpha * state->estimatedAsl +
+		  //(1.0 - state->estAlpha) * asl +
+		  (state->aslAlpha) * asl;
+  //state->velocityFactor * state->velocityZ * dt;
 
-	  state->estimatedAcc = state->estimatedAsl = state->estimatedZ;
-	  iteration=0;
-  }
-  iteration++;*/
+  state->estimatedAcc = state->estAlpha * state->estimatedAcc +
+		  state->velocityFactor * state->velocityZ * dt;
+
+  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;*/
 
   //correct the oscillation for 100times
   if(iteration>=MAX_ITERATION){
 	  if(subIteration < RESETTING_WINDOW){
-		  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
 		  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
 
 		  //state->estimatedAcc = state->estimatedAsl = state->estimatedZ;
@@ -113,7 +114,10 @@ static void positionEstimateInternal(state_t* estimate, float asl, float dt, str
 	  state->estimatedAcc = state->estAlpha * state->estimatedAcc +
 			  state->velocityFactor * state->velocityZ * dt;
 
-	  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+	  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+
+	  state->estimatedZ = (16.0/20.0)*state->estimatedAcc;
+	  state->estimatedZ += (4.0/20.0)*state->estimatedAsl;
   }
   iteration++;
 

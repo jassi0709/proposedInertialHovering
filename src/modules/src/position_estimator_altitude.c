@@ -57,8 +57,10 @@ static struct selfState_s state = {
   .aslAlpha = 0.002,
 };
 
-//static uint16_t iteration = 0;
-#define MAX_ITERATION 100		//at each Xth counter iteration, the barometer's data are considered into the Z position
+static uint16_t iteration = 0;
+static uint16_t subIteration = 0;
+#define MAX_ITERATION 500*5		//at each Xth counter iteration, the barometer's data are considered into the Z position
+#define RESETTING_WINDOW 100		//TODO need some optimization
 
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state);
 static void positionUpdateVelocityInternal(float accWZ, float dt, struct selfState_s* state);
@@ -74,26 +76,46 @@ void positionUpdateVelocity(float accWZ, float dt) {
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state) {
   static float prev_estimatedZ = 0;
 
-  state->estimatedAsl = state->estAlpha * state->estimatedAsl +
-  			  //(1.0 - state->estAlpha) * asl +
-  			  (state->aslAlpha) * asl;
-  			  //state->velocityFactor * state->velocityZ * dt;
+  /*TODO	Since the there are 2 filters that never correct themselves to the
+   * 		final "estimatedZ", the diverge after few minutes and therefore,
+   * 		the drone starts oscillating
+   */
 
-  state->estimatedAcc = state->estAlpha * state->estimatedAcc +
-		  state->velocityFactor * state->velocityZ * dt;
-
-  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
-
-  /*if(iteration<MAX_ITERATION){
-	  state->estimatedZ = state->estimatedAcc;
-  }else{
+  /*if(iteration>=MAX_ITERATION){
 	  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
 
-	  //state->estimatedAcc = state->estimatedAsl = state->estimatedZ;
-	  iteration=0;estimatedAsl
+	  state->estimatedAcc = state->estimatedAsl = state->estimatedZ;
+	  iteration=0;
   }
-
   iteration++;*/
+
+  //correct the oscillation for 100times
+  if(iteration>=MAX_ITERATION){
+	  if(subIteration < RESETTING_WINDOW){
+		  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+		  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+
+		  //state->estimatedAcc = state->estimatedAsl = state->estimatedZ;
+		  state->estimatedAcc = (state->estimatedAcc+state->estimatedZ)/2;
+		  state->estimatedAsl = (state->estimatedAsl+state->estimatedZ)/2;
+		  subIteration++;
+	  }else{
+		  subIteration = 0;
+		  iteration=0;
+	  }
+  }
+  else{
+	  state->estimatedAsl = state->estAlpha * state->estimatedAsl +
+			  //(1.0 - state->estAlpha) * asl +
+			  (state->aslAlpha) * asl;
+	  //state->velocityFactor * state->velocityZ * dt;
+
+	  state->estimatedAcc = state->estAlpha * state->estimatedAcc +
+			  state->velocityFactor * state->velocityZ * dt;
+
+	  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+  }
+  iteration++;
 
   estimate->position.x = 0.0;
   estimate->position.y = 0.0;

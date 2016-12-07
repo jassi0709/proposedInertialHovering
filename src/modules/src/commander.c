@@ -78,7 +78,7 @@ static CommanderCache* activeCache;
 static uint32_t lastUpdate;
 static bool isInactive;
 static bool thrustLocked;
-static bool altHoldMode = false;
+bool altHoldMode = false;			//FIXME restore static?
 static bool posHoldMode = false;
 static bool posSetMode = false;
 static bool jaskiCommand = false;

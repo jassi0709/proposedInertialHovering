@@ -31,6 +31,10 @@
 
 #define G 9.81;
 
+extern bool altHoldMode;
+static bool doneOnce = false;
+static float savedAsl,savedAcc;
+
 struct selfState_s {
   float estimatedZ; // The current Z estimate, has same offset as asl
   float estimatedAcc;	// Current value of only barometer's data with closed loop
@@ -58,7 +62,6 @@ static struct selfState_s state = {
 };
 
 static uint16_t iteration = 0;
-static uint16_t subIteration = 0;
 #define MAX_ITERATION 500*3		//at each Xth counter iteration, the barometer's data are considered into the Z position
 #define RESETTING_WINDOW 50		//TODO need some optimization
 
@@ -91,35 +94,36 @@ static void positionEstimateInternal(state_t* estimate, float asl, float dt, str
 
   state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;*/
 
-  //correct the oscillation for 100times
-  if(iteration>=MAX_ITERATION){
-	  if(subIteration < RESETTING_WINDOW){
-		  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+  state->estimatedAsl = state->estAlpha * state->estimatedAsl +
+		  //(1.0 - state->estAlpha) * asl +
+		  (state->aslAlpha) * asl;
+  //state->velocityFactor * state->velocityZ * dt;
 
-		  //state->estimatedAcc = state->estimatedAsl = state->estimatedZ;
-		  state->estimatedAcc = (state->estimatedAcc+state->estimatedZ)/2;
-		  state->estimatedAsl = (state->estimatedAsl+state->estimatedZ)/2;
-		  subIteration++;
-	  }else{
-		  subIteration = 0;
-		  iteration=0;
+  state->estimatedAcc = state->estAlpha * state->estimatedAcc +
+		  state->velocityFactor * state->velocityZ * dt;
+
+  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+
+  state->estimatedZ = (13.0/20.0)*state->estimatedAcc;
+  state->estimatedZ += (7.0/20.0)*state->estimatedAsl;
+
+  if(altHoldMode){
+	  if(!doneOnce){
+		  savedAsl = state->estimatedAsl;
+		  savedAcc = state->estimatedAcc;
+		  doneOnce = true;
+	  }
+	  else{
+		  if(iteration>=MAX_ITERATION){
+			  state->estimatedAsl = savedAsl;
+			  state->estimatedAcc = savedAcc;
+			  iteration=0;
+		  }
+		  iteration++;
 	  }
   }
-  else{
-	  state->estimatedAsl = state->estAlpha * state->estimatedAsl +
-			  //(1.0 - state->estAlpha) * asl +
-			  (state->aslAlpha) * asl;
-	  //state->velocityFactor * state->velocityZ * dt;
-
-	  state->estimatedAcc = state->estAlpha * state->estimatedAcc +
-			  state->velocityFactor * state->velocityZ * dt;
-
-	  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
-
-	  state->estimatedZ = (16.0/20.0)*state->estimatedAcc;
-	  state->estimatedZ += (4.0/20.0)*state->estimatedAsl;
-  }
-  iteration++;
+  else
+	  doneOnce = false;
 
   estimate->position.x = 0.0;
   estimate->position.y = 0.0;

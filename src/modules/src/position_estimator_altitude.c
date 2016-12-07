@@ -34,6 +34,7 @@
 struct selfState_s {
   float estimatedZ; // The current Z estimate, has same offset as asl
   float estimatedAcc;	// Current value of only barometer's data with closed loop
+  float estimatedAsl;
   float velocityZ; // Vertical speed (world frame) integrated from vertical acceleration (m/s)
   float estAlpha;
   float velocityFactor;
@@ -46,17 +47,18 @@ struct selfState_s {
 static struct selfState_s state = {
   .estimatedZ = 0.0,
   .estimatedAcc = 0.0,
+  .estimatedAsl = 0.0,
   .velocityZ = 0.0,
   .estAlpha = 0.997,//0.997,
-  .velocityFactor = 14,//1.293125,//1.0,
+  .velocityFactor = 4.25,//1.293125,//1.0,
   .vAccDeadband = 0.04,//0.04,
-  .velZAlpha = 0.01,//0.995,
+  .velZAlpha = 0.015,//0.995,
   .estimatedVZ = 0.0,
   .aslAlpha = 0.002,
 };
 
-static uint16_t iteration = 0;
-#define MAX_ITERATION 15		//at each 50th counter iteration, the barometer's data are considered into the Z position
+//static uint16_t iteration = 0;
+#define MAX_ITERATION 100		//at each Xth counter iteration, the barometer's data are considered into the Z position
 
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state);
 static void positionUpdateVelocityInternal(float accWZ, float dt, struct selfState_s* state);
@@ -72,20 +74,26 @@ void positionUpdateVelocity(float accWZ, float dt) {
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state) {
   static float prev_estimatedZ = 0;
 
-  state->estimatedZ = state->estAlpha * state->estimatedZ +
+  state->estimatedAsl = state->estAlpha * state->estimatedAsl +
   			  //(1.0 - state->estAlpha) * asl +
-  			  (state->aslAlpha) * asl+
-  			  state->velocityFactor * state->velocityZ * dt;
+  			  (state->aslAlpha) * asl;
+  			  //state->velocityFactor * state->velocityZ * dt;
 
   state->estimatedAcc = state->estAlpha * state->estimatedAcc +
-		  state->aslAlpha * asl;
+		  state->velocityFactor * state->velocityZ * dt;
 
-  if(iteration<MAX_ITERATION){
+  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+
+  /*if(iteration<MAX_ITERATION){
 	  state->estimatedZ = state->estimatedAcc;
   }else{
-	  state->estimatedZ += state->estimatedAcc;
-	  state->estimatedAcc = state->estimatedZ;
+	  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+
+	  //state->estimatedAcc = state->estimatedAsl = state->estimatedZ;
+	  iteration=0;estimatedAsl
   }
+
+  iteration++;*/
 
   estimate->position.x = 0.0;
   estimate->position.y = 0.0;

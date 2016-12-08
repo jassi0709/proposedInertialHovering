@@ -59,8 +59,8 @@ static struct selfState_s state = {
 
 static uint16_t iteration = 0;
 static uint16_t subIteration = 0;
-#define MAX_ITERATION 500*3		//at each Xth counter iteration, the barometer's data are considered into the Z position
-#define RESETTING_WINDOW 50		//TODO need some optimization
+#define MAX_ITERATION 500*10		//at each Xth counter iteration, the barometer's data are considered into the Z position
+#define RESETTING_WINDOW 2		//TODO need some optimization
 
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state);
 static void positionUpdateVelocityInternal(float accWZ, float dt, struct selfState_s* state);
@@ -78,7 +78,9 @@ static void positionEstimateInternal(state_t* estimate, float asl, float dt, str
 
   /*TODO	Since the there are 2 filters that never correct themselves to the
    * 		final "estimatedZ", the diverge after few minutes and therefore,
-   * 		the drone starts oscillating
+   * 		the drone starts oscillating.
+   *
+   * 		Solved now, maybe?
    */
 
   /*state->estimatedAsl = state->estAlpha * state->estimatedAsl +
@@ -91,7 +93,7 @@ static void positionEstimateInternal(state_t* estimate, float asl, float dt, str
 
   state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;*/
 
-  //correct the oscillation for 100times
+  //correct the oscillation for RESETTING_WINDOW
   if(iteration>=MAX_ITERATION){
 	  if(subIteration < RESETTING_WINDOW){
 		  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;

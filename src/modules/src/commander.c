@@ -329,20 +329,6 @@ void commanderGetSetpoint(setpoint_t *setpoint, const state_t *state)
     setpoint->thrust = 0;
     setpoint->mode.z = modeVelocity;
 
-    /*if((xTaskGetTickCount() - beginCmdTime) > 1500){
-    	//commanderSetActiveThrust(50);
-    	//commanderSetActiveYaw(140.0);
-    	//jaskiCommand = false;
-    	oneWayDone = !oneWayDone;
-    	beginCmdTime = xTaskGetTickCount();
-    }
-    else{
-    	if(oneWayDone)
-    		commanderSetActivePitch(-2);
-    	else
-    		commanderSetActivePitch(2);
-    }*/
-
     setpoint->velocity.z = ((float) rawThrust - 32767.f) / 32767.f;
   } else {
     setpoint->mode.z = modeDisable;

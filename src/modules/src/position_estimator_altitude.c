@@ -58,8 +58,8 @@ static struct selfState_s state = {
 };
 
 static uint16_t iteration = 0;
-static uint16_t subIteration = 0;
-#define MAX_ITERATION 500*10		//at each Xth counter iteration, the barometer's data are considered into the Z position
+//static uint16_t subIteration = 0;
+#define MAX_ITERATION 500*3		//at each Xth counter iteration, the barometer's data are considered into the Z position
 #define RESETTING_WINDOW 2		//TODO need some optimization
 
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state);
@@ -95,7 +95,7 @@ static void positionEstimateInternal(state_t* estimate, float asl, float dt, str
 
   //correct the oscillation for RESETTING_WINDOW
   if(iteration>=MAX_ITERATION){
-	  if(subIteration < RESETTING_WINDOW){
+	  /*if(subIteration < RESETTING_WINDOW){							//FIXME do I need a resetting window?
 		  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
 
 		  //state->estimatedAcc = state->estimatedAsl = state->estimatedZ;
@@ -105,7 +105,8 @@ static void positionEstimateInternal(state_t* estimate, float asl, float dt, str
 	  }else{
 		  subIteration = 0;
 		  iteration=0;
-	  }
+	  }*/
+	  iteration++;
   }
   else{
 	  state->estimatedAsl = state->estAlpha * state->estimatedAsl +
@@ -118,10 +119,9 @@ static void positionEstimateInternal(state_t* estimate, float asl, float dt, str
 
 	  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
 
-	  state->estimatedZ = (16.0/20.0)*state->estimatedAcc;
-	  state->estimatedZ += (4.0/20.0)*state->estimatedAsl;
+	  state->estimatedZ = (16.5/20.0)*state->estimatedAcc;
+	  state->estimatedZ += (3.5/20.0)*state->estimatedAsl;
   }
-  iteration++;
 
   estimate->position.x = 0.0;
   estimate->position.y = 0.0;

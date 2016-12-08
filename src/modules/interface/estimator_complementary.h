@@ -1,0 +1,17 @@
+/*
+ * estimator_complementary.h
+ *
+ *  Created on: Dec 8, 2016
+ *      Author: jaskirat
+ */
+
+#ifndef MODULES_ESTIMATOR_COMPLEMENTARY_H_
+#define MODULES_ESTIMATOR_COMPLEMENTARY_H_
+
+#define ATTITUDE_UPDATE_RATE RATE_250_HZ
+#define ATTITUDE_UPDATE_DT 1.0/ATTITUDE_UPDATE_RATE
+
+#define POS_UPDATE_RATE RATE_250_HZ
+#define POS_UPDATE_DT 1.0/POS_UPDATE_RATE
+
+#endif /* MODULES_ESTIMATOR_COMPLEMENTARY_H_ */

@@ -28,8 +28,15 @@
 #include "param.h"
 #include "num.h"
 #include "position_estimator.h"
+#include "estimator_complementary.h"
 
 #define G 9.81;
+
+extern bool altHoldMode;
+static bool firstTime = true;
+static float backupEstimatedZ;
+static float backupEstimatedAcc;
+static float backupEstimatedAsl;
 
 struct selfState_s {
   float estimatedZ; // The current Z estimate, has same offset as asl
@@ -50,7 +57,7 @@ static struct selfState_s state = {
   .estimatedAsl = 0.0,
   .velocityZ = 0.0,
   .estAlpha = 0.997,//0.997,
-  .velocityFactor = 4.25,//1.293125,//1.0,
+  .velocityFactor = 4.5,//1.293125,//1.0,
   .vAccDeadband = 0.04,//0.04,
   .velZAlpha = 0.015,//0.995,
   .estimatedVZ = 0.0,
@@ -58,9 +65,7 @@ static struct selfState_s state = {
 };
 
 static uint16_t iteration = 0;
-//static uint16_t subIteration = 0;
-#define MAX_ITERATION 500*3		//at each Xth counter iteration, the barometer's data are considered into the Z position
-#define RESETTING_WINDOW 2		//TODO need some optimization
+#define WHEN_TO_RESET POS_UPDATE_RATE*15		//at each Xth counter iteration, the barometer's data are considered into the Z position
 
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state);
 static void positionUpdateVelocityInternal(float accWZ, float dt, struct selfState_s* state);
@@ -76,52 +81,44 @@ void positionUpdateVelocity(float accWZ, float dt) {
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state) {
   static float prev_estimatedZ = 0;
 
-  /*TODO	Since the there are 2 filters that never correct themselves to the
-   * 		final "estimatedZ", the diverge after few minutes and therefore,
-   * 		the drone starts oscillating.
-   *
-   * 		Solved now, maybe?
-   */
+  /*	FIXME(Jaskirat) Should I remove this counter method and use the RATE_DO_EXECUTE method like in the
+   * 	stateEstimator() function? */
+  if(altHoldMode){
+	  if(firstTime){
+		  /*	saving the estimated parameters to be restored later
+		   * 	when divergence occurs.  */
+		  backupEstimatedZ = state->estimatedZ;
+		  backupEstimatedAcc = state->estimatedAcc;
+		  backupEstimatedAsl = state->estimatedAsl;
+		  firstTime = false;
+	  }
+	  else if(iteration>=WHEN_TO_RESET){
+		  /*	Restore the backed up values if some time
+		   * 	has been elapsed */
+		  state->estimatedZ = backupEstimatedZ;
+		  state->estimatedAcc = backupEstimatedAcc;
+		  state->estimatedAsl = backupEstimatedAsl;
 
-  /*state->estimatedAsl = state->estAlpha * state->estimatedAsl +
-		  //(1.0 - state->estAlpha) * asl +
+		  iteration = 0;
+	  }
+
+	  iteration++;
+  }
+  else
+	  firstTime = true;
+
+  //complementary filter for barometer's data
+  state->estimatedAsl = state->estAlpha * state->estimatedAsl +
 		  (state->aslAlpha) * asl;
-  //state->velocityFactor * state->velocityZ * dt;
 
+  //complementary filter for accelerometer's data
   state->estimatedAcc = state->estAlpha * state->estimatedAcc +
 		  state->velocityFactor * state->velocityZ * dt;
 
-  state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;*/
+  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
+  state->estimatedZ = (16.5/20.0)*state->estimatedAcc;
+  state->estimatedZ += (3.5/20.0)*state->estimatedAsl;
 
-  //correct the oscillation for RESETTING_WINDOW
-  if(iteration>=MAX_ITERATION){
-	  /*if(subIteration < RESETTING_WINDOW){							//FIXME do I need a resetting window?
-		  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
-
-		  //state->estimatedAcc = state->estimatedAsl = state->estimatedZ;
-		  state->estimatedAcc = (state->estimatedAcc+state->estimatedZ)/2;
-		  state->estimatedAsl = (state->estimatedAsl+state->estimatedZ)/2;
-		  subIteration++;
-	  }else{
-		  subIteration = 0;
-		  iteration=0;
-	  }*/
-	  iteration++;
-  }
-  else{
-	  state->estimatedAsl = state->estAlpha * state->estimatedAsl +
-			  //(1.0 - state->estAlpha) * asl +
-			  (state->aslAlpha) * asl;
-	  //state->velocityFactor * state->velocityZ * dt;
-
-	  state->estimatedAcc = state->estAlpha * state->estimatedAcc +
-			  state->velocityFactor * state->velocityZ * dt;
-
-	  //state->estimatedZ = (state->estimatedAcc + state->estimatedAsl)/2;
-
-	  state->estimatedZ = (16.5/20.0)*state->estimatedAcc;
-	  state->estimatedZ += (3.5/20.0)*state->estimatedAsl;
-  }
 
   estimate->position.x = 0.0;
   estimate->position.y = 0.0;

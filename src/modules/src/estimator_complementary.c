@@ -1,15 +1,10 @@
 
+#include "estimator_complementary.h"
 #include "stabilizer.h"
 #include "stabilizer_types.h"
 
 #include "sensfusion6.h"
 #include "position_estimator.h"
-
-#define ATTITUDE_UPDATE_RATE RATE_250_HZ
-#define ATTITUDE_UPDATE_DT 1.0/ATTITUDE_UPDATE_RATE
-
-#define POS_UPDATE_RATE RATE_250_HZ
-#define POS_UPDATE_DT 1.0/POS_UPDATE_RATE
 
 void stateEstimatorInit(void)
 {

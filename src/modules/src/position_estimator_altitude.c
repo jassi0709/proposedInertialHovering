@@ -65,7 +65,7 @@ static struct selfState_s state = {
 };
 
 static uint16_t iteration = 0;
-#define WHEN_TO_RESET POS_UPDATE_RATE*15		//at each Xth counter iteration, the barometer's data are considered into the Z position
+#define WHEN_TO_RESET POS_UPDATE_RATE*30		//at each Xth counter iteration, the barometer's data are considered into the Z position
 
 static void positionEstimateInternal(state_t* estimate, float asl, float dt, struct selfState_s* state);
 static void positionUpdateVelocityInternal(float accWZ, float dt, struct selfState_s* state);
